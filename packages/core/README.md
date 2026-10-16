@@ -22,7 +22,7 @@ This is why widening the target ledger window (e.g. from 1 to 5) increases the r
 
 ### How historical fee distribution is sampled
 
-The engine pulls every fee data point recorded in the **last hour** from the fee history store. If that window has fewer than **50 samples**, it's treated as a cold start (see [Limitations](#limitations)) and the engine skips statistical estimation entirely in favor of a fixed fallback.
+The engine pulls every fee data point recorded in the **last 3 hours** (`history_window_secs`, default 10800) from the fee history store. If that window has fewer than **10 samples** (`min_sample_count`), it's treated as a cold start (see [Limitations](#limitations)) and the engine skips statistical estimation entirely in favor of a fixed fallback.
 
 When enough samples exist, they're sorted once and percentiles are read off the sorted array by rank (e.g. p50, p90, p99), which is also what backs the urgency-based base fee:
 
@@ -72,6 +72,6 @@ These are not adjustable per-request — they're fixed reference points so calle
 
 ### Limitations
 
-- **Cold start (fewer than 50 samples):** When the last hour of fee history has fewer than `min_sample_count` (50) data points, the engine does not attempt statistical estimation. It falls back to fixed fees by urgency level (100 / 500 / 1,000 / 5,000 stroops for low/medium/high/urgent), a flat confidence of 0.85, and reports network condition as `"unknown"`. Treat fallback responses as rough defaults, not data-backed estimates.
-- **Rapid network changes:** The sampling window is a trailing hour, and recommendation results are cached briefly (10 seconds by default). A sudden shift in network congestion — a surge starting mid-window, for instance — won't be fully reflected until enough new samples accumulate and the cache expires. Recommendations during volatile periods should be treated as lagging indicators, not real-time guarantees.
+- **Cold start (fewer than 10 samples):** When the configured history window (default 3 hours) has fewer than `min_sample_count` (default 10) data points, the engine does not attempt statistical estimation. It falls back to fixed fees by urgency level (100 / 500 / 1,000 / 5,000 stroops for low/medium/high/urgent), a flat confidence of 0.85, and reports network condition as `"unknown"`. Treat fallback responses as rough defaults, not data-backed estimates.
+- **Rapid network changes:** The sampling window is a trailing window (3 hours by default), and recommendation results are cached briefly (10 seconds by default). A sudden shift in network congestion — a surge starting mid-window, for instance — won't be fully reflected until enough new samples accumulate and the cache expires. Recommendations during volatile periods should be treated as lagging indicators, not real-time guarantees.
 - **Sample independence assumption:** The multi-ledger probability formula (`1 - (1 - p_one)^N`) assumes each ledger's inclusion chance is independent. In practice, consecutive ledgers under sustained congestion are correlated, so confidence for larger ledger windows may be optimistic during prolonged surges.

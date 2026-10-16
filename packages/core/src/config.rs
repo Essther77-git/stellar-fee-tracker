@@ -21,7 +21,6 @@ pub struct Config {
     pub base_retry_delay_ms: u64,
     pub database_url: String,
     pub storage_retention_days: u64,
-    #[allow(dead_code)]
     pub recommendation: RecommendationConfig,
     /// Which alert types (from `VALID_ALERT_TYPES`) `AlertManager` will
     /// evaluate each poll tick. Defaults to all four — spike alerting
@@ -192,22 +191,23 @@ impl Config {
             .unwrap_or(7);
 
         // -------- Recommendation config --------
+        let rec_defaults = RecommendationConfig::default();
         let recommendation = RecommendationConfig {
             default_confidence: get("REC_DEFAULT_CONFIDENCE")
                 .and_then(|v| v.parse::<f64>().ok())
-                .unwrap_or(0.95),
+                .unwrap_or(rec_defaults.default_confidence),
             default_ledgers: get("REC_DEFAULT_LEDGERS")
                 .and_then(|v| v.parse::<u8>().ok())
-                .unwrap_or(2),
+                .unwrap_or(rec_defaults.default_ledgers),
             history_window_secs: get("REC_HISTORY_WINDOW_SECS")
                 .and_then(|v| v.parse::<u64>().ok())
-                .unwrap_or(3600),
+                .unwrap_or(rec_defaults.history_window_secs),
             cache_ttl_secs: get("REC_CACHE_TTL_SECS")
                 .and_then(|v| v.parse::<u64>().ok())
-                .unwrap_or(10),
+                .unwrap_or(rec_defaults.cache_ttl_secs),
             min_sample_count: get("REC_MIN_SAMPLE_COUNT")
                 .and_then(|v| v.parse::<usize>().ok())
-                .unwrap_or(50),
+                .unwrap_or(rec_defaults.min_sample_count),
         };
 
         Ok(Self {

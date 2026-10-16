@@ -1,7 +1,7 @@
 use axum::http::StatusCode;
 use serde_json::json;
 
-use crate::recommendation::types::{RecommendRequest, Urgency};
+use crate::recommendation::types::RecommendRequest;
 
 const MAX_FEE_UPPER_BOUND: u64 = 100_000_000;
 const MAX_TARGET_LEDGERS: u32 = 100;
@@ -17,24 +17,6 @@ pub fn validate_recommend_request(
                     "error": format!(
                         "target_ledgers must be between 1 and {}, got {}",
                         MAX_TARGET_LEDGERS, ledgers
-                    )
-                }),
-            ));
-        }
-    }
-
-    if let Some(ref urgency) = req.urgency {
-        let valid = matches!(
-            urgency,
-            Urgency::Low | Urgency::Medium | Urgency::High | Urgency::Urgent
-        );
-        if !valid {
-            return Err((
-                StatusCode::BAD_REQUEST,
-                json!({
-                    "error": format!(
-                        "urgency must be one of [low, medium, high, urgent], got {:?}",
-                        urgency
                     )
                 }),
             ));
@@ -75,6 +57,7 @@ pub fn validate_recommend_request(
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::recommendation::types::Urgency;
 
     #[test]
     fn valid_request_passes() {

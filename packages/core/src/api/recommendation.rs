@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use axum::{extract::State, Json};
+use axum::{
+    extract::State,
+    response::{IntoResponse, Response},
+    Json,
+};
 use chrono::Utc;
 
 use crate::error::AppError;
@@ -33,17 +37,15 @@ pub struct FeeRecommendResponse {
 pub async fn recommend(
     State(state): State<RecommendationState>,
     Json(body): Json<RecommendRequest>,
-) -> Result<Json<RecommendResponse>, AppError> {
-    validate_recommend_request(&body).map_err(|(_status, err_json)| {
-        AppError::Parse(
-            err_json["error"]
-                .as_str()
-                .unwrap_or("Validation error")
-                .to_string(),
-        )
-    })?;
+) -> Result<Json<RecommendResponse>, Response> {
+    validate_recommend_request(&body)
+        .map_err(|(status, err_json)| (status, Json(err_json)).into_response())?;
 
-    let result = state.engine.recommend(&body).await?;
+    let result = state
+        .engine
+        .recommend(&body)
+        .await
+        .map_err(IntoResponse::into_response)?;
 
     if let Some(metrics) = &state.metrics {
         metrics.recommendations_total.inc();
